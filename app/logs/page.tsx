@@ -10,7 +10,7 @@ import { filterLogs } from '@/utils/ui.utils';
 import { extractLogLevels } from '@/services/logParser.service';
 
 export default function LogsViewerPage() {
-  const { logs, loading, error, availableFiles, availablePackets, packetsEnabled, refetch } = useLogs();
+  const { logs, loading, error, availableFiles, availablePackets, packetsEnabled, packetColors, refetch } = useLogs();
 
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [filterFile, setFilterFile] = useState<string>('ALL');
@@ -92,7 +92,7 @@ export default function LogsViewerPage() {
 
         {/* Logs Table */}
         {!loading && !error && logs.length > 0 && (
-          <LogTable logs={filteredLogs} packetsEnabled={packetsEnabled} />
+          <LogTable logs={filteredLogs} packetsEnabled={packetsEnabled} packetColors={packetColors} />
         )}
       </div>
     </div>

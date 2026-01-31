@@ -9,6 +9,7 @@ import { getLogFileRepository } from '@/data/repositories/logFile.repository';
 import { getSettingsRepository } from '@/data/repositories/settings.repository';
 import { parseLogFiles, extractPacketIds } from '@/services/logParser.service';
 import { normalizeSettings } from '@/services/settings.service';
+import { getPacketColorMap } from '@/services/packetColor.service';
 
 export async function GET() {
   try {
@@ -47,12 +48,14 @@ export async function GET() {
 
     // Extract unique packet IDs
     const packetIds = extractPacketIds(logs);
+    const packetColors = getPacketColorMap(packetIds);
 
     const response: LogsApiResponse = {
       logs,
       totalEntries: logs.length,
       files: logFiles.map(f => f.name),
       packets: packetIds,
+      packetColors,
       settings: {
         enablePackets: settings.enablePackets,
         packetStartPattern: settings.packetStartPattern,
@@ -72,5 +75,3 @@ export async function GET() {
     );
   }
 }
-
-

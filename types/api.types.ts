@@ -11,6 +11,7 @@ export interface LogsApiResponse {
   totalEntries: number;
   files: string[];
   packets: string[];
+  packetColors: Record<string, string>;
   settings: {
     enablePackets: boolean;
     packetStartPattern: string;
@@ -20,6 +21,7 @@ export interface LogsApiResponse {
 
 export interface SummaryApiResponse {
   summary: LogSummary;
+  packetColors: Record<string, string>;
 }
 
 export interface SummaryApiError {

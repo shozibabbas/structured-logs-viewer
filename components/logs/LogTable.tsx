@@ -13,6 +13,7 @@ import { FixedSizeList as List, type ListChildComponentProps } from 'react-windo
 interface LogTableProps {
   logs: LogEntry[];
   packetsEnabled: boolean;
+  packetColors?: Record<string, string>;
 }
 
 const VIRTUALIZATION_THRESHOLD = 500;
@@ -21,7 +22,7 @@ const VIRTUAL_LIST_HEIGHT_PX = 600;
 const VIRTUAL_MIN_WIDTH_WITH_PACKETS_PX = 1150;
 const VIRTUAL_MIN_WIDTH_NO_PACKETS_PX = 1000;
 
-export function LogTable({ logs, packetsEnabled }: LogTableProps) {
+export function LogTable({ logs, packetsEnabled, packetColors = {} }: LogTableProps) {
   if (logs.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
@@ -43,6 +44,7 @@ export function LogTable({ logs, packetsEnabled }: LogTableProps) {
       logs,
       packetsEnabled,
       gridTemplateClass,
+      packetColors,
     };
 
     return (
@@ -114,6 +116,7 @@ export function LogTable({ logs, packetsEnabled }: LogTableProps) {
                 key={`${log.fileName}-${log.lineNumber}-${index}`}
                 log={log}
                 packetsEnabled={packetsEnabled}
+                packetColors={packetColors}
               />
             ))}
           </tbody>
@@ -127,6 +130,7 @@ interface VirtualRowData {
   logs: LogEntry[];
   packetsEnabled: boolean;
   gridTemplateClass: string;
+  packetColors: Record<string, string>;
 }
 
 function getLogRowKey(index: number, data: VirtualRowData) {
@@ -157,7 +161,10 @@ function VirtualLogRow({ index, style, data }: ListChildComponentProps<VirtualRo
         <div role="cell" className="whitespace-nowrap">
           {log.packetId ? (
             <div className="flex items-center gap-1">
-              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-mono">
+              <span
+                className="px-2 py-1 rounded text-xs font-mono text-white"
+                style={{ backgroundColor: data.packetColors[log.packetId] || '#7c3aed' }}
+              >
                 {formatPacketId(log.packetId)}
               </span>
               {log.isPacketStart && (
@@ -198,9 +205,10 @@ function VirtualLogRow({ index, style, data }: ListChildComponentProps<VirtualRo
 interface LogTableRowProps {
   log: LogEntry;
   packetsEnabled: boolean;
+  packetColors: Record<string, string>;
 }
 
-function LogTableRow({ log, packetsEnabled }: LogTableRowProps) {
+function LogTableRow({ log, packetsEnabled, packetColors }: LogTableRowProps) {
   return (
     <tr
       className={`hover:bg-gray-50 ${
@@ -219,7 +227,10 @@ function LogTableRow({ log, packetsEnabled }: LogTableRowProps) {
         <td className="px-4 py-3 text-sm whitespace-nowrap">
           {log.packetId ? (
             <div className="flex items-center gap-1">
-              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-mono">
+              <span
+                className="px-2 py-1 rounded text-xs font-mono text-white"
+                style={{ backgroundColor: packetColors[log.packetId] || '#7c3aed' }}
+              >
                 {formatPacketId(log.packetId)}
               </span>
               {log.isPacketStart && (

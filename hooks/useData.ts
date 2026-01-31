@@ -23,6 +23,7 @@ export function useLogs() {
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [availablePackets, setAvailablePackets] = useState<string[]>([]);
   const [packetsEnabled, setPacketsEnabled] = useState(false);
+  const [packetColors, setPacketColors] = useState<Record<string, string>>({});
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -39,6 +40,7 @@ export function useLogs() {
         setAvailableFiles(data.files || []);
         setAvailablePackets(data.packets || []);
         setPacketsEnabled(data.settings?.enablePackets || false);
+        setPacketColors(data.packetColors || {});
       }
     } catch (err) {
       setError('Failed to fetch logs: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -58,6 +60,7 @@ export function useLogs() {
     availableFiles,
     availablePackets,
     packetsEnabled,
+    packetColors,
     refetch: fetchLogs,
   };
 }
@@ -69,6 +72,7 @@ export function useLogSummary() {
   const [summary, setSummary] = useState<LogSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [packetColors, setPacketColors] = useState<Record<string, string>>({});
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -82,6 +86,7 @@ export function useLogSummary() {
         setError(data.error);
       } else {
         setSummary(data.summary);
+        setPacketColors(data.packetColors || {});
       }
     } catch (err) {
       setError('Failed to fetch summary: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -98,6 +103,7 @@ export function useLogSummary() {
     summary,
     loading,
     error,
+    packetColors,
     refetch: fetchSummary,
   };
 }

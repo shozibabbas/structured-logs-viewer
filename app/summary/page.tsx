@@ -1,18 +1,48 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { useLogSummary } from '@/hooks/useData';
 import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/common';
 import { LogSummaryCards } from '@/components/summary/LogSummaryCards';
 import { SummaryTable } from '@/components/summary/SummaryTable';
 import { PacketTimelineGraph } from '@/components/summary/PacketTimelineGraph';
+import { PacketDurationGraph } from '@/components/summary/PacketDurationGraph';
+import { SummaryFilters } from '@/components/summary/SummaryFilters';
+import { filterPacketDurations } from '@/utils/ui.utils';
 
 export default function LogSummaryPage() {
-  const { summary, loading, error, refetch } = useLogSummary();
+  const { summary, loading, error, packetColors, refetch } = useLogSummary();
+
+  const [filterFile, setFilterFile] = useState<string>('ALL');
+  const [filterPacket, setFilterPacket] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const availableFiles = useMemo(
+    () => summary?.files.map((item) => item.label) ?? [],
+    [summary]
+  );
+
+  const availablePackets = useMemo(() => {
+    const packets = summary?.packetDurations.map((item) => item.packetId) ?? [];
+    return Array.from(new Set(packets)).sort();
+  }, [summary]);
+
+  const filteredPacketDurations = useMemo(() => {
+    if (!summary) {
+      return [];
+    }
+
+    return filterPacketDurations(summary.packetDurations, {
+      file: filterFile,
+      packet: filterPacket,
+      search: searchQuery,
+    });
+  }, [summary, filterFile, filterPacket, searchQuery]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-400 mx-auto space-y-6">
+      <div className="w-full space-y-6 overflow-visible">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">📈 Log Summary</h1>
@@ -51,7 +81,24 @@ export default function LogSummaryPage() {
         )}
 
         {!loading && !error && summary && (
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-visible">
+            <SummaryFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              filterFile={filterFile}
+              onFileChange={setFilterFile}
+              filterPacket={filterPacket}
+              onPacketChange={setFilterPacket}
+              availableFiles={availableFiles}
+              availablePackets={availablePackets}
+              onRefresh={refetch}
+              loading={loading}
+            />
+
+            <div className="text-sm text-gray-600">
+              Showing {filteredPacketDurations.length} of {summary.packetDurations.length} packet(s)
+            </div>
+
             <LogSummaryCards summary={summary} />
 
             <div className="grid gap-6 lg:grid-cols-2">
@@ -59,7 +106,9 @@ export default function LogSummaryPage() {
               <SummaryTable title="Files" items={summary.files} />
             </div>
 
-            <PacketTimelineGraph items={summary.packetDurations} />
+            <PacketDurationGraph items={filteredPacketDurations} packetColors={packetColors} />
+
+            <PacketTimelineGraph items={filteredPacketDurations} packetColors={packetColors} />
           </div>
         )}
       </div>

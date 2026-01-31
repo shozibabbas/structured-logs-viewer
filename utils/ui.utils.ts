@@ -3,6 +3,7 @@
  */
 
 import type { LogLevel } from '@/types/log.types';
+import type { PacketDurationSummary } from '@/types/summary.types';
 
 /**
  * Gets Tailwind CSS classes for a log level badge
@@ -105,6 +106,43 @@ export function filterLogs(
         log.message.toLowerCase().includes(query) ||
         log.module.toLowerCase().includes(query) ||
         log.timestamp.toLowerCase().includes(query)
+      );
+    }
+
+    return true;
+  });
+}
+
+export interface PacketDurationFilters {
+  file?: string;
+  packet?: string;
+  search?: string;
+}
+
+/**
+ * Filters packet duration summaries based on criteria
+ */
+export function filterPacketDurations(
+  items: PacketDurationSummary[],
+  filters: PacketDurationFilters
+): PacketDurationSummary[] {
+  return items.filter((item) => {
+    if (filters.file && filters.file !== 'ALL' && item.fileName !== filters.file) {
+      return false;
+    }
+
+    if (filters.packet && filters.packet !== 'ALL' && item.packetId !== filters.packet) {
+      return false;
+    }
+
+    if (filters.search) {
+      const query = filters.search.toLowerCase();
+      const fileName = item.fileName?.toLowerCase() ?? '';
+      return (
+        item.packetId.toLowerCase().includes(query) ||
+        fileName.includes(query) ||
+        item.startTimestamp.toLowerCase().includes(query) ||
+        item.endTimestamp.toLowerCase().includes(query)
       );
     }
 

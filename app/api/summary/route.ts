@@ -10,6 +10,8 @@ import { getSettingsRepository } from '@/data/repositories/settings.repository';
 import { parseLogFiles } from '@/services/logParser.service';
 import { normalizeSettings } from '@/services/settings.service';
 import { buildLogSummary } from '@/services/logSummary.service';
+import { getPacketColorMap } from '@/services/packetColor.service';
+import { extractPacketIds } from '@/services/logParser.service';
 
 export async function GET() {
   try {
@@ -42,9 +44,12 @@ export async function GET() {
     });
 
     const summary = buildLogSummary(logs);
+    const packetIds = extractPacketIds(logs);
+    const packetColors = getPacketColorMap(packetIds);
 
     const response: SummaryApiResponse = {
       summary,
+      packetColors,
     };
 
     return NextResponse.json(response);

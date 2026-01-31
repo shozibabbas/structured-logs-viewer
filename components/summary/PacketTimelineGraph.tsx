@@ -9,6 +9,7 @@ import { formatPacketDurationMs, formatPacketId } from '@/utils/ui.utils';
 
 interface PacketTimelineGraphProps {
   items: PacketDurationSummary[];
+  packetColors?: Record<string, string>;
 }
 
 interface FilePackets {
@@ -16,7 +17,7 @@ interface FilePackets {
   packets: PacketDurationSummary[];
 }
 
-export function PacketTimelineGraph({ items }: PacketTimelineGraphProps) {
+export function PacketTimelineGraph({ items, packetColors = {} }: PacketTimelineGraphProps) {
   const { timelineData, fileGroups } = useMemo(() => {
     const timeline = calculateTimelineData(items);
     const groups = groupPacketsByFile(items);
@@ -65,7 +66,7 @@ export function PacketTimelineGraph({ items }: PacketTimelineGraphProps) {
 
         {/* Timeline rows - one per file */}
         <div className="space-y-4 max-h-150 overflow-y-auto pb-20 pt-16">
-          {fileGroups.map((fileGroup, fileIndex) => (
+          {fileGroups.map((fileGroup) => (
             <div key={fileGroup.fileName} className="flex items-center group hover:bg-gray-50 py-3 rounded relative">
               <div className="w-48 shrink-0 pr-3">
                 <div className="text-sm font-semibold text-gray-800 truncate" title={fileGroup.fileName}>
@@ -81,6 +82,7 @@ export function PacketTimelineGraph({ items }: PacketTimelineGraphProps) {
                   const startTime = parseTimestamp(packet.startTimestamp);
                   const startOffset = ((startTime.getTime() - timelineData.earliestTime) / timelineData.totalDuration) * 100;
                   const durationPercent = (packet.durationMs / timelineData.totalDuration) * 100;
+                  const barColor = packetColors[packet.packetId] || '#3b82f6';
 
                   return (
                     <div
@@ -89,7 +91,7 @@ export function PacketTimelineGraph({ items }: PacketTimelineGraphProps) {
                       style={{
                         left: `${startOffset}%`,
                         width: `${Math.max(durationPercent, 0.3)}%`,
-                        backgroundColor: getBarColor(fileIndex),
+                        backgroundColor: barColor,
                       }}
                       title={`${formatPacketId(packet.packetId)}: ${formatPacketDurationMs(packet.durationMs)}\nStart: ${packet.startTimestamp}\nEnd: ${packet.endTimestamp}`}
                     >
@@ -213,19 +215,4 @@ function calculateTimelineData(items: PacketDurationSummary[]): TimelineData {
 
 function parseTimestamp(timestamp: string): Date {
   return new Date(timestamp.replace(',', '.'));
-}
-
-function getBarColor(index: number): string {
-  const colors = [
-    '#3b82f6', // blue-500
-    '#8b5cf6', // violet-500
-    '#ec4899', // pink-500
-    '#f59e0b', // amber-500
-    '#10b981', // emerald-500
-    '#06b6d4', // cyan-500
-    '#6366f1', // indigo-500
-    '#f97316', // orange-500
-  ];
-
-  return colors[index % colors.length];
 }

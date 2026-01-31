@@ -3,13 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-interface Settings {
-  id: number;
-  enablePackets: boolean;
-  packetStartPattern: string;
-  packetEndPattern: string;
-}
-
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -1,6 +1,8 @@
-# 📊 Structured Logs Viewer
+# Structured Logs Viewer
 
 A modern, web-based log viewer built with Next.js for analyzing and filtering structured application logs. Perfect for development, debugging, and monitoring applications that generate structured log files.
+
+------------------------------------
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=flat&logo=next.js&logoColor=white)

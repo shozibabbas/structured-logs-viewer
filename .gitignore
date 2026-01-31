@@ -46,6 +46,7 @@ next-env.d.ts
 /logs/*.log
 !/logs/sample.log
 
-# database
-/data/
+# database files only (keep repository code)
+/data/*.db
+/data/*.db-*
 

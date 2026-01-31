@@ -184,11 +184,66 @@ Retrieves all parsed log entries from the `logs/` directory.
       "message": "User authentication successful",
       "fileName": "application.log",
       "rawLine": "2026-01-30 14:32:15,123 | INFO | auth.service | User authentication successful",
-      "lineNumber": 42
+      "lineNumber": 42,
+      "packetId": "packet_1_2026-01-30 14:32:10,000",
+      "isPacketStart": false,
+      "isPacketEnd": false
     }
   ],
   "totalEntries": 1523,
-  "files": ["application.log", "errors.log"]
+  "files": ["application.log", "errors.log"],
+  "packets": ["packet_1_2026-01-30 14:32:10,000", "packet_2_2026-01-30 14:45:22,100"],
+  "settings": {
+    "enablePackets": true,
+    "packetStartPattern": "Received message on",
+    "packetEndPattern": "Processed OK"
+  }
+}
+```
+
+### `GET /api/settings`
+
+Retrieves current log parsing settings.
+
+**Response:**
+```json
+{
+  "settings": {
+    "id": 1,
+    "enablePackets": true,
+    "packetStartPattern": "Received message on",
+    "packetEndPattern": "Processed OK",
+    "createdAt": "2026-01-30 12:00:00",
+    "updatedAt": "2026-01-30 12:30:00"
+  }
+}
+```
+
+### `PUT /api/settings`
+
+Updates log parsing settings.
+
+**Request Body:**
+```json
+{
+  "enablePackets": true,
+  "packetStartPattern": "Received message on",
+  "packetEndPattern": "Processed OK"
+}
+```
+
+**Response:**
+```json
+{
+  "settings": {
+    "id": 1,
+    "enablePackets": true,
+    "packetStartPattern": "Received message on",
+    "packetEndPattern": "Processed OK",
+    "createdAt": "2026-01-30 12:00:00",
+    "updatedAt": "2026-01-30 12:35:00"
+  },
+  "message": "Settings updated successfully"
 }
 ```
 
@@ -203,17 +258,24 @@ Retrieves all parsed log entries from the `logs/` directory.
 structured-logs-viewer/
 ├── app/
 │   ├── api/
-│   │   └── logs/
-│   │       └── route.ts          # API endpoint for reading logs
+│   │   ├── logs/
+│   │   │   └── route.ts          # API endpoint for reading logs
+│   │   └── settings/
+│   │       └── route.ts          # API endpoint for settings
 │   ├── logs/
 │   │   └── page.tsx              # Main logs viewer interface
+│   ├── settings/
+│   │   └── page.tsx              # Settings configuration page
 │   ├── layout.tsx                # Root layout
 │   ├── page.tsx                  # Landing page
 │   └── globals.css               # Global styles
 ├── lib/
-│   └── logParser.ts              # Log parsing utilities
+│   ├── logParser.ts              # Log parsing utilities
+│   └── database.ts               # SQLite database management
 ├── logs/                         # Place your .log files here
 │   └── sample.log                # Example log file
+├── data/                         # SQLite database (auto-generated)
+│   └── settings.db
 ├── public/                       # Static assets
 ├── package.json
 ├── tsconfig.json

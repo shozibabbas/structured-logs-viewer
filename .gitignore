@@ -46,3 +46,6 @@ next-env.d.ts
 /logs/*.log
 !/logs/sample.log
 
+# database
+/data/
+

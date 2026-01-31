@@ -6,6 +6,9 @@ export interface LogEntry {
   fileName: string;
   rawLine: string;
   lineNumber: number;
+  packetId?: string;  // Unique identifier for the message packet
+  isPacketStart?: boolean;
+  isPacketEnd?: boolean;
 }
 
 /**
@@ -41,7 +44,14 @@ export function parseLogLine(
 /**
  * Parses multiple log files and combines their entries
  */
-export function parseLogFiles(files: { name: string; content: string }[]): LogEntry[] {
+export function parseLogFiles(
+  files: { name: string; content: string }[],
+  options?: {
+    enablePackets?: boolean;
+    packetStartPattern?: string;
+    packetEndPattern?: string;
+  }
+): LogEntry[] {
   const allEntries: LogEntry[] = [];
 
   for (const file of files) {
@@ -76,6 +86,11 @@ export function parseLogFiles(files: { name: string; content: string }[]): LogEn
     }
   }
 
+  // Apply packet tracking if enabled
+  if (options?.enablePackets && options.packetStartPattern && options.packetEndPattern) {
+    applyPacketTracking(allEntries, options.packetStartPattern, options.packetEndPattern);
+  }
+
   // Sort by timestamp
   allEntries.sort((a, b) => {
     const dateA = new Date(a.timestamp.replace(',', '.'));
@@ -85,3 +100,44 @@ export function parseLogFiles(files: { name: string; content: string }[]): LogEn
 
   return allEntries;
 }
+
+/**
+ * Applies packet tracking to log entries based on start and end patterns
+ */
+function applyPacketTracking(
+  entries: LogEntry[],
+  startPattern: string,
+  endPattern: string
+): void {
+  let currentPacketId: string | null = null;
+  let packetCounter = 0;
+
+  try {
+    // Create regex patterns from the strings
+    const startRegex = new RegExp(startPattern);
+    const endRegex = new RegExp(endPattern);
+
+    for (const entry of entries) {
+      // Check if this is a packet start
+      if (startRegex.test(entry.message)) {
+        packetCounter++;
+        currentPacketId = `packet_${packetCounter}_${entry.timestamp}`;
+        entry.packetId = currentPacketId;
+        entry.isPacketStart = true;
+      } else if (currentPacketId) {
+        // Assign current packet ID to this entry
+        entry.packetId = currentPacketId;
+
+        // Check if this is a packet end
+        if (endRegex.test(entry.message)) {
+          entry.isPacketEnd = true;
+          currentPacketId = null; // Reset for next packet
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error applying packet tracking:', error);
+    // If regex is invalid, skip packet tracking
+  }
+}
+

@@ -24,8 +24,14 @@ export default async function HomePage() {
 
                     <div className="flex gap-3">
                         <Link
-                            href="/logs"
+                            href="/summary"
                             className="flex-1 text-center rounded-lg bg-blue-600 text-white px-6 py-3 text-lg font-semibold hover:bg-blue-700 transition-colors"
+                        >
+                            View Summary
+                        </Link>
+                        <Link
+                            href="/logs"
+                            className="flex-1 text-center rounded-lg bg-indigo-600 text-white px-6 py-3 text-lg font-semibold hover:bg-indigo-700 transition-colors"
                         >
                             View Logs
                         </Link>

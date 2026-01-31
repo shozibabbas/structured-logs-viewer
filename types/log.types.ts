@@ -13,6 +13,7 @@ export interface LogEntry {
   packetId?: string;
   isPacketStart?: boolean;
   isPacketEnd?: boolean;
+  packetDurationMs?: number;
 }
 
 export type LogLevel = 'INFO' | 'WARNING' | 'WARN' | 'ERROR' | 'DEBUG' | 'CRITICAL' | 'FATAL';

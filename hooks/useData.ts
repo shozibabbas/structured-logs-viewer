@@ -5,7 +5,8 @@
 import { useState, useEffect } from 'react';
 import type { LogEntry } from '@/types/log.types';
 import type { LogSettings } from '@/types/settings.types';
-import type { LogsApiResponse, SettingsApiResponse } from '@/types/api.types';
+import type { LogsApiResponse, SettingsApiResponse, SummaryApiResponse } from '@/types/api.types';
+import type { LogSummary } from '@/types/summary.types';
 
 interface ErrorResponse {
   error: string;
@@ -58,6 +59,46 @@ export function useLogs() {
     availablePackets,
     packetsEnabled,
     refetch: fetchLogs,
+  };
+}
+
+/**
+ * Hook for fetching and managing log summary
+ */
+export function useLogSummary() {
+  const [summary, setSummary] = useState<LogSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSummary = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/summary');
+      const data = (await response.json()) as SummaryApiResponse | ErrorResponse;
+
+      if ('error' in data) {
+        setError(data.error);
+      } else {
+        setSummary(data.summary);
+      }
+    } catch (err) {
+      setError('Failed to fetch summary: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+
+  return {
+    summary,
+    loading,
+    error,
+    refetch: fetchSummary,
   };
 }
 

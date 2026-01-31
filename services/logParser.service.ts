@@ -3,7 +3,7 @@
  * Pure functions with no side effects
  */
 
-import type { LogEntry, ParsedFile, PacketTrackingOptions, LogLevel } from '@/types/log.types';
+import type { LogEntry, ParsedFile, PacketTrackingOptions } from '@/types/log.types';
 
 /**
  * Parses a single log line into a LogEntry object
@@ -47,13 +47,15 @@ export function parseLogFiles(
     allEntries.push(...entries);
   }
 
+  // Sort by timestamp
+  const sortedEntries = sortLogsByTimestamp(allEntries);
+
   // Apply packet tracking if enabled
   if (options?.enablePackets && options.packetStartPattern && options.packetEndPattern) {
-    applyPacketTracking(allEntries, options.packetStartPattern, options.packetEndPattern);
+    applyPacketTracking(sortedEntries, options.packetStartPattern, options.packetEndPattern);
   }
 
-  // Sort by timestamp
-  return sortLogsByTimestamp(allEntries);
+  return sortedEntries;
 }
 
 /**
@@ -100,27 +102,42 @@ function applyPacketTracking(
   startPattern: string,
   endPattern: string
 ): void {
-  let currentPacketId: string | null = null;
-  let packetCounter = 0;
+  const currentPacketIdByFile = new Map<string, string | null>();
+  const packetCounterByFile = new Map<string, number>();
+  const packetStartTimeByFile = new Map<string, Date | null>();
 
   try {
     const startRegex = new RegExp(startPattern);
     const endRegex = new RegExp(endPattern);
 
     for (const entry of entries) {
-      // Check for packet start
+      const fileKey = entry.fileName;
+      const currentPacketId = currentPacketIdByFile.get(fileKey) ?? null;
+      const packetCounter = packetCounterByFile.get(fileKey) ?? 0;
+
       if (startRegex.test(entry.message)) {
-        packetCounter++;
-        currentPacketId = generatePacketId(packetCounter, entry.timestamp);
-        entry.packetId = currentPacketId;
+        const nextCounter = packetCounter + 1;
+        const nextPacketId = generatePacketId(nextCounter, entry.timestamp);
+        entry.packetId = nextPacketId;
         entry.isPacketStart = true;
-      } else if (currentPacketId) {
+        currentPacketIdByFile.set(fileKey, nextPacketId);
+        packetCounterByFile.set(fileKey, nextCounter);
+        packetStartTimeByFile.set(fileKey, parseTimestamp(entry.timestamp));
+        continue;
+      }
+
+      if (currentPacketId) {
         entry.packetId = currentPacketId;
 
-        // Check for packet end
         if (endRegex.test(entry.message)) {
           entry.isPacketEnd = true;
-          currentPacketId = null;
+          const startTime = packetStartTimeByFile.get(fileKey) ?? null;
+          if (startTime) {
+            const endTime = parseTimestamp(entry.timestamp);
+            entry.packetDurationMs = Math.max(0, endTime.getTime() - startTime.getTime());
+          }
+          currentPacketIdByFile.set(fileKey, null);
+          packetStartTimeByFile.set(fileKey, null);
         }
       }
     }

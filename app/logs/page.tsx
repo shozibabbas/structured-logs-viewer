@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useLogs } from '@/hooks/useData';
 import { LogTable } from '@/components/logs/LogTable';
 import { LogFilters } from '@/components/logs/LogFilters';
@@ -38,12 +39,20 @@ export default function LogsViewerPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-gray-900">📊 Structured Logs Viewer</h1>
-            <a
-              href="/settings"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-            >
-              ⚙️ Settings
-            </a>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/summary"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                📈 Summary
+              </Link>
+              <Link
+                href="/settings"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+              >
+                ⚙️ Settings
+              </Link>
+            </div>
           </div>
           <p className="text-gray-600">
             Showing {filteredLogs.length} of {logs.length} log entries

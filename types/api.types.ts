@@ -4,6 +4,7 @@
 
 import type { LogEntry } from './log.types';
 import type { LogSettings } from './settings.types';
+import type { LogSummary } from './summary.types';
 
 export interface LogsApiResponse {
   logs: LogEntry[];
@@ -15,6 +16,15 @@ export interface LogsApiResponse {
     packetStartPattern: string;
     packetEndPattern: string;
   };
+}
+
+export interface SummaryApiResponse {
+  summary: LogSummary;
+}
+
+export interface SummaryApiError {
+  error: string;
+  details?: string;
 }
 
 export interface LogsApiError {

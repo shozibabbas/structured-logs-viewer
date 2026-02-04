@@ -2,7 +2,7 @@
  * Utility functions for UI components
  */
 
-import type { LogLevel } from '@/types/log.types';
+import type { LogLevel, LogEntry } from '@/types/log.types';
 import type { PacketDurationSummary } from '@/types/summary.types';
 
 /**
@@ -68,18 +68,40 @@ export function formatDurationHMS(durationMs: number): string {
 }
 
 /**
+ * Builds a map of packet IDs to their extract modes
+ */
+function buildPacketExtractModeMap(logs: LogEntry[]): Map<string, Set<string>> {
+  const packetModes = new Map<string, Set<string>>();
+
+  for (const log of logs) {
+    if (log.packetId && log.extractMode) {
+      if (!packetModes.has(log.packetId)) {
+        packetModes.set(log.packetId, new Set<string>());
+      }
+      packetModes.get(log.packetId)!.add(log.extractMode);
+    }
+  }
+
+  return packetModes;
+}
+
+/**
  * Filters log entries based on criteria
  */
 export function filterLogs(
-  logs: any[],
+  logs: LogEntry[],
   filters: {
     level?: string;
     file?: string;
     packet?: string;
+    extractMode?: string;
     search?: string;
   }
-): any[] {
-  return logs.filter(log => {
+): LogEntry[] {
+  // Build map of packet IDs to their extract modes for efficient lookup
+  const packetModes = buildPacketExtractModeMap(logs);
+
+  return logs.filter((log) => {
     // Level filter
     if (filters.level && filters.level !== 'ALL' && log.level !== filters.level) {
       return false;
@@ -99,13 +121,29 @@ export function filterLogs(
       }
     }
 
+    // Extract mode filter: show all entries in packets that have this extract mode
+    if (filters.extractMode && filters.extractMode !== 'ALL') {
+      // If log has no packet, exclude it
+      if (!log.packetId) {
+        return false;
+      }
+      // Check if this packet has the selected extract mode
+      const packetModeSet = packetModes.get(log.packetId);
+      if (!packetModeSet || !packetModeSet.has(filters.extractMode)) {
+        return false;
+      }
+      // Include all logs in packets with this extract mode
+      return true;
+    }
+
     // Search filter
     if (filters.search) {
       const query = filters.search.toLowerCase();
       return (
         log.message.toLowerCase().includes(query) ||
         log.module.toLowerCase().includes(query) ||
-        log.timestamp.toLowerCase().includes(query)
+        log.timestamp.toLowerCase().includes(query) ||
+        (log.extractMode?.toLowerCase().includes(query) ?? false)
       );
     }
 
@@ -116,6 +154,7 @@ export function filterLogs(
 export interface PacketDurationFilters {
   file?: string;
   packet?: string;
+  extractMode?: string;
   search?: string;
 }
 
@@ -135,14 +174,23 @@ export function filterPacketDurations(
       return false;
     }
 
+    if (filters.extractMode && filters.extractMode !== 'ALL') {
+      const tags = item.tags ?? [];
+      if (!tags.includes(filters.extractMode)) {
+        return false;
+      }
+    }
+
     if (filters.search) {
       const query = filters.search.toLowerCase();
       const fileName = item.fileName?.toLowerCase() ?? '';
+      const tagMatch = (item.tags ?? []).some((tag) => tag.toLowerCase().includes(query));
       return (
         item.packetId.toLowerCase().includes(query) ||
         fileName.includes(query) ||
         item.startTimestamp.toLowerCase().includes(query) ||
-        item.endTimestamp.toLowerCase().includes(query)
+        item.endTimestamp.toLowerCase().includes(query) ||
+        tagMatch
       );
     }
 

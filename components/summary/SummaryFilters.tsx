@@ -15,8 +15,11 @@ interface SummaryFiltersProps {
   onFileChange: (value: string) => void;
   filterPacket: string;
   onPacketChange: (value: string) => void;
+  filterExtractMode: string;
+  onExtractModeChange: (value: string) => void;
   availableFiles: string[];
   availablePackets: string[];
+  availableExtractModes: string[];
   onRefresh: () => void;
   loading: boolean;
 }
@@ -28,12 +31,16 @@ export function SummaryFilters({
   onFileChange,
   filterPacket,
   onPacketChange,
+  filterExtractMode,
+  onExtractModeChange,
   availableFiles,
   availablePackets,
+  availableExtractModes,
   onRefresh,
   loading,
 }: SummaryFiltersProps) {
   const packetsAvailable = availablePackets.length > 0;
+  const extractModesAvailable = availableExtractModes.length > 0;
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 space-y-4">
@@ -86,6 +93,27 @@ export function SummaryFilters({
               {availablePackets.map((packet) => (
                 <option key={packet} value={packet}>
                   Packet {formatPacketId(packet)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Extract Mode Filter */}
+        {extractModesAvailable && (
+          <div className="w-64">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Extract Mode
+            </label>
+            <select
+              value={filterExtractMode}
+              onChange={(e) => onExtractModeChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="ALL">All Modes</option>
+              {availableExtractModes.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
                 </option>
               ))}
             </select>

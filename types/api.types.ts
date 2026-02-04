@@ -16,6 +16,7 @@ export interface LogsApiResponse {
     enablePackets: boolean;
     packetStartPattern: string;
     packetEndPattern: string;
+    packetIdPattern: string;
   };
 }
 

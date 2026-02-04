@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { PacketDurationSummary } from '@/types/summary.types';
 import { formatPacketDurationMs, formatPacketId } from '@/utils/ui.utils';
 
@@ -18,6 +19,7 @@ interface FilePackets {
 }
 
 export function PacketTimelineGraph({ items, packetColors = {} }: PacketTimelineGraphProps) {
+  const router = useRouter();
   const { timelineData, fileGroups } = useMemo(() => {
     const timeline = calculateTimelineData(items);
     const groups = groupPacketsByFile(items);
@@ -31,6 +33,10 @@ export function PacketTimelineGraph({ items, packetColors = {} }: PacketTimeline
       </div>
     );
   }
+
+  const handlePacketClick = (packetId: string) => {
+    router.push(`/logs?packet=${encodeURIComponent(packetId)}`);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -94,6 +100,7 @@ export function PacketTimelineGraph({ items, packetColors = {} }: PacketTimeline
                         backgroundColor: barColor,
                       }}
                       title={`${formatPacketId(packet.packetId)}: ${formatPacketDurationMs(packet.durationMs)}\nStart: ${packet.startTimestamp}\nEnd: ${packet.endTimestamp}`}
+                      onClick={() => handlePacketClick(packet.packetId)}
                     >
                       <div className="h-full flex items-center justify-center">
                         {durationPercent > 3 && (

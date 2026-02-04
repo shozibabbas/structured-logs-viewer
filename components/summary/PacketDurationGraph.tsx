@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { PacketDurationSummary } from '@/types/summary.types';
 import { formatPacketDurationMs, formatPacketId } from '@/utils/ui.utils';
 
@@ -26,6 +27,7 @@ interface GraphData {
 }
 
 export function PacketDurationGraph({ items, packetColors = {} }: PacketDurationGraphProps) {
+  const router = useRouter();
   const graphData = useMemo(() => calculateGraphData(items), [items]);
 
   if (items.length === 0) {
@@ -35,6 +37,10 @@ export function PacketDurationGraph({ items, packetColors = {} }: PacketDuration
       </div>
     );
   }
+
+  const handlePacketClick = (packetId: string) => {
+    router.push(`/logs?packet=${encodeURIComponent(packetId)}`);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-visible">
@@ -48,7 +54,7 @@ export function PacketDurationGraph({ items, packetColors = {} }: PacketDuration
       </div>
       <div className="p-6 overflow-visible">
         <div className="w-full overflow-y-visible pb-4">
-          <PacketGraph data={graphData} packetColors={packetColors} />
+          <PacketGraph data={graphData} packetColors={packetColors} onPacketClick={handlePacketClick} />
         </div>
 
         {/* Legend */}
@@ -70,9 +76,10 @@ export function PacketDurationGraph({ items, packetColors = {} }: PacketDuration
 interface PacketGraphProps {
   data: GraphData;
   packetColors: Record<string, string>;
+  onPacketClick: (packetId: string) => void;
 }
 
-function PacketGraph({ data: graphData, packetColors }: PacketGraphProps) {
+function PacketGraph({ data: graphData, packetColors, onPacketClick }: PacketGraphProps) {
   const graphHeight = 400;
   const graphWidth = 1200; // Reference width for viewBox
   const padding = { top: 40, right: 40, bottom: 60, left: 70 };
@@ -151,7 +158,12 @@ function PacketGraph({ data: graphData, packetColors }: PacketGraphProps) {
         const pointColor = packetColors[point.packetId] || '#3b82f6';
 
         return (
-          <g key={`point-${index}`} className="group cursor-pointer">
+          <g
+            key={`point-${index}`}
+            className="group cursor-pointer"
+            onClick={() => onPacketClick(point.packetId)}
+            style={{ pointerEvents: 'auto' }}
+          >
             <circle
               cx={x}
               cy={y}

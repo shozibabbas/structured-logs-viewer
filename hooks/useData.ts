@@ -24,6 +24,7 @@ export function useLogs() {
   const [availablePackets, setAvailablePackets] = useState<string[]>([]);
   const [packetsEnabled, setPacketsEnabled] = useState(false);
   const [packetColors, setPacketColors] = useState<Record<string, string>>({});
+  const [packetIdPattern, setPacketIdPattern] = useState<string>('');
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -41,6 +42,7 @@ export function useLogs() {
         setAvailablePackets(data.packets || []);
         setPacketsEnabled(data.settings?.enablePackets || false);
         setPacketColors(data.packetColors || {});
+        setPacketIdPattern(data.settings?.packetIdPattern || '');
       }
     } catch (err) {
       setError('Failed to fetch logs: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -61,6 +63,7 @@ export function useLogs() {
     availablePackets,
     packetsEnabled,
     packetColors,
+    packetIdPattern,
     refetch: fetchLogs,
   };
 }

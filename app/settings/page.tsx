@@ -11,6 +11,7 @@ export default function SettingsPage() {
     enablePackets: true,
     packetStartPattern: '',
     packetEndPattern: '',
+    packetIdPattern: '',
   });
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function SettingsPage() {
           enablePackets: data.settings.enablePackets,
           packetStartPattern: data.settings.packetStartPattern,
           packetEndPattern: data.settings.packetEndPattern,
+          packetIdPattern: data.settings.packetIdPattern,
         });
       }
     } catch (error) {
@@ -72,6 +74,7 @@ export default function SettingsPage() {
       enablePackets: true,
       packetStartPattern: 'Received message on',
       packetEndPattern: 'Processed OK',
+      packetIdPattern: 'job_id=([a-zA-Z0-9_-]+)',
     });
     setMessage({ type: 'success', text: 'Reset to default values' });
   };
@@ -191,6 +194,31 @@ export default function SettingsPage() {
                 <p className="text-xs text-blue-900 font-semibold mb-1">Example:</p>
                 <code className="text-xs text-blue-800">
                   2026-01-30 04:31:56,692 | INFO | message_queue_listener | <span className="bg-yellow-200">Processed OK</span>
+                </code>
+              </div>
+            </div>
+
+            {/* Packet ID Pattern */}
+            <div>
+              <label htmlFor="packetIdPattern" className="block text-sm font-medium text-gray-700 mb-2">
+                Packet ID Pattern (Regex)
+              </label>
+              <input
+                type="text"
+                id="packetIdPattern"
+                value={formData.packetIdPattern}
+                onChange={(e) => setFormData({ ...formData, packetIdPattern: e.target.value })}
+                placeholder="e.g., job_id=([a-zA-Z0-9_-]+)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                disabled={!formData.enablePackets}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Regular expression to extract packet ID from log messages
+              </p>
+              <div className="mt-2 bg-blue-50 border border-blue-200 rounded p-3">
+                <p className="text-xs text-blue-900 font-semibold mb-1">Example:</p>
+                <code className="text-xs text-blue-800">
+                  2026-01-30 05:44:17,678 | INFO | mq_listener_document_checklist_mapping | ACKing message early for <span className="bg-yellow-200">job_id=d6e2b075cbad47419e381e74d60e3743</span>
                 </code>
               </div>
             </div>

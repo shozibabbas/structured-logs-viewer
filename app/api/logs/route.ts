@@ -39,11 +39,12 @@ export async function GET() {
     const rawSettings = settingsRepo.getSettings();
     const settings = normalizeSettings(rawSettings);
 
-    // Parse logs with packet tracking
+    // Parse logs (packet IDs are extracted from job_id and propagated across the packet)
     const logs = parseLogFiles(logFiles, {
       enablePackets: settings.enablePackets,
       packetStartPattern: settings.packetStartPattern,
       packetEndPattern: settings.packetEndPattern,
+      packetIdPattern: settings.packetIdPattern,
     });
 
     // Extract unique packet IDs
@@ -60,6 +61,7 @@ export async function GET() {
         enablePackets: settings.enablePackets,
         packetStartPattern: settings.packetStartPattern,
         packetEndPattern: settings.packetEndPattern,
+        packetIdPattern: settings.packetIdPattern,
       },
     };
 

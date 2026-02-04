@@ -6,6 +6,23 @@
 import type { LogEntry, ParsedFile, PacketTrackingOptions } from '@/types/log.types';
 
 /**
+ * Extracts extract mode from log message
+ */
+export function extractExtractMode(message: string): string | undefined {
+  const match = message.match(/routed to extract mode:\s*([a-zA-Z0-9_-]+)/i);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Extracts job_id from log message
+ */
+export function extractJobId(message: string, packetIdPattern?: string): string | undefined {
+  const pattern = packetIdPattern?.trim() || 'job_id=([a-zA-Z0-9_-]+)';
+  const match = message.match(new RegExp(pattern, 'i'));
+  return match ? match[1] : undefined;
+}
+
+/**
  * Parses a single log line into a LogEntry object
  */
 export function parseLogLine(
@@ -14,19 +31,22 @@ export function parseLogLine(
   lineNumber: number
 ): LogEntry | null {
   // Pattern: timestamp | level | module | message
-  const logPattern = /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3})\s*\|\s*(\w+)\s*\|\s*([^|]+?)\s*\|\s*(.+)$/;
+  const logPattern = /^([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3})\s*\|\s*(\w+)\s*\|\s*([^|]+?)\s*\|\s*(.+)$/;
 
   const match = line.match(logPattern);
 
   if (match) {
+    const message = match[4].trim();
+
     return {
       timestamp: match[1].trim(),
       level: match[2].trim() as 'INFO' | 'WARNING' | 'WARN' | 'ERROR' | 'DEBUG' | 'CRITICAL' | 'FATAL',
       module: match[3].trim(),
-      message: match[4].trim(),
+      message,
       fileName,
       rawLine: line,
       lineNumber,
+      extractMode: extractExtractMode(message),
     };
   }
 
@@ -50,9 +70,13 @@ export function parseLogFiles(
   // Sort by timestamp
   const sortedEntries = sortLogsByTimestamp(allEntries);
 
-  // Apply packet tracking if enabled
-  if (options?.enablePackets && options.packetStartPattern && options.packetEndPattern) {
-    applyPacketTracking(sortedEntries, options.packetStartPattern, options.packetEndPattern);
+  if (options?.enablePackets) {
+    applyPacketIdPropagation(
+      sortedEntries,
+      options.packetStartPattern,
+      options.packetEndPattern,
+      options.packetIdPattern
+    );
   }
 
   return sortedEntries;
@@ -95,65 +119,6 @@ function parseLogFile(file: ParsedFile): LogEntry[] {
 }
 
 /**
- * Applies packet tracking to log entries based on patterns
- */
-function applyPacketTracking(
-  entries: LogEntry[],
-  startPattern: string,
-  endPattern: string
-): void {
-  const currentPacketIdByFile = new Map<string, string | null>();
-  const packetCounterByFile = new Map<string, number>();
-  const packetStartTimeByFile = new Map<string, Date | null>();
-
-  try {
-    const startRegex = new RegExp(startPattern);
-    const endRegex = new RegExp(endPattern);
-
-    for (const entry of entries) {
-      const fileKey = entry.fileName;
-      const currentPacketId = currentPacketIdByFile.get(fileKey) ?? null;
-      const packetCounter = packetCounterByFile.get(fileKey) ?? 0;
-
-      if (startRegex.test(entry.message)) {
-        const nextCounter = packetCounter + 1;
-        const nextPacketId = generatePacketId(nextCounter, entry.timestamp);
-        entry.packetId = nextPacketId;
-        entry.isPacketStart = true;
-        currentPacketIdByFile.set(fileKey, nextPacketId);
-        packetCounterByFile.set(fileKey, nextCounter);
-        packetStartTimeByFile.set(fileKey, parseTimestamp(entry.timestamp));
-        continue;
-      }
-
-      if (currentPacketId) {
-        entry.packetId = currentPacketId;
-
-        if (endRegex.test(entry.message)) {
-          entry.isPacketEnd = true;
-          const startTime = packetStartTimeByFile.get(fileKey) ?? null;
-          if (startTime) {
-            const endTime = parseTimestamp(entry.timestamp);
-            entry.packetDurationMs = Math.max(0, endTime.getTime() - startTime.getTime());
-          }
-          currentPacketIdByFile.set(fileKey, null);
-          packetStartTimeByFile.set(fileKey, null);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error applying packet tracking:', error);
-  }
-}
-
-/**
- * Generates a unique packet ID
- */
-function generatePacketId(counter: number, timestamp: string): string {
-  return `packet_${counter}_${timestamp}`;
-}
-
-/**
  * Sorts log entries by timestamp
  */
 function sortLogsByTimestamp(entries: LogEntry[]): LogEntry[] {
@@ -171,6 +136,41 @@ function parseTimestamp(timestamp: string): Date {
   return new Date(timestamp.replace(',', '.'));
 }
 
+function applyPacketIdPropagation(
+  entries: LogEntry[],
+  startPattern?: string,
+  endPattern?: string,
+  packetIdPattern?: string
+): void {
+  const currentPacketIdByFile = new Map<string, string | null>();
+  const startRegex = startPattern ? new RegExp(startPattern) : null;
+  const endRegex = endPattern ? new RegExp(endPattern) : null;
+
+  for (const entry of entries) {
+    const fileKey = entry.fileName;
+    const jobId = extractJobId(entry.message, packetIdPattern);
+
+    if (jobId) {
+      currentPacketIdByFile.set(fileKey, jobId);
+      entry.packetId = jobId;
+
+      if (startRegex?.test(entry.message)) {
+        entry.isPacketStart = true;
+      }
+    } else {
+      const currentPacketId = currentPacketIdByFile.get(fileKey) ?? null;
+      if (currentPacketId) {
+        entry.packetId = currentPacketId;
+      }
+    }
+
+    if (entry.packetId && endRegex?.test(entry.message)) {
+      entry.isPacketEnd = true;
+      currentPacketIdByFile.set(fileKey, null);
+    }
+  }
+}
+
 /**
  * Extracts unique packet IDs from log entries
  */
@@ -183,7 +183,7 @@ export function extractPacketIds(entries: LogEntry[]): string[] {
     }
   }
 
-  return Array.from(packetIds);
+  return Array.from(packetIds).sort();
 }
 
 /**

@@ -17,9 +17,12 @@ interface LogFiltersProps {
   onFileChange: (value: string) => void;
   filterPacket: string;
   onPacketChange: (value: string) => void;
+  filterExtractMode: string;
+  onExtractModeChange: (value: string) => void;
   availableLevels: string[];
   availableFiles: string[];
   availablePackets: string[];
+  availableExtractModes: string[];
   packetsEnabled: boolean;
   onRefresh: () => void;
   loading: boolean;
@@ -34,9 +37,12 @@ export function LogFilters({
   onFileChange,
   filterPacket,
   onPacketChange,
+  filterExtractMode,
+  onExtractModeChange,
   availableLevels,
   availableFiles,
   availablePackets,
+  availableExtractModes,
   packetsEnabled,
   onRefresh,
   loading,
@@ -112,6 +118,27 @@ export function LogFilters({
               {availablePackets.map((packet) => (
                 <option key={packet} value={packet}>
                   Packet {formatPacketId(packet)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Extract Mode Filter */}
+        {availableExtractModes.length > 0 && (
+          <div className="w-64">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Extract Mode
+            </label>
+            <select
+              value={filterExtractMode}
+              onChange={(e) => onExtractModeChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="ALL">All Modes</option>
+              {availableExtractModes.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
                 </option>
               ))}
             </select>

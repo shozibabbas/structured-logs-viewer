@@ -61,10 +61,13 @@ class DatabaseManager {
         enablePackets INTEGER NOT NULL DEFAULT 1,
         packetStartPattern TEXT NOT NULL,
         packetEndPattern TEXT NOT NULL,
+        packetIdPattern TEXT NOT NULL,
         createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    this.ensureColumnExists('packetIdPattern', "TEXT NOT NULL DEFAULT 'job_id=([a-zA-Z0-9_-]+)'");
   }
 
   /**
@@ -80,10 +83,10 @@ class DatabaseManager {
     if (count.count === 0) {
       this.db
         .prepare(`
-          INSERT INTO settings (enablePackets, packetStartPattern, packetEndPattern)
-          VALUES (?, ?, ?)
+          INSERT INTO settings (enablePackets, packetStartPattern, packetEndPattern, packetIdPattern)
+          VALUES (?, ?, ?, ?)
         `)
-        .run(1, 'Received message on', 'Processed OK');
+        .run(1, 'Received message on', 'Processed OK', 'job_id=([a-zA-Z0-9_-]+)');
     }
   }
 
@@ -94,6 +97,17 @@ class DatabaseManager {
     if (this.db) {
       this.db.close();
       this.db = null;
+    }
+  }
+
+  private ensureColumnExists(columnName: string, columnDefinition: string): void {
+    if (!this.db) return;
+
+    const columns = this.db.prepare('PRAGMA table_info(settings)').all() as Array<{ name: string }>;
+    const hasColumn = columns.some((column) => column.name === columnName);
+
+    if (!hasColumn) {
+      this.db.exec(`ALTER TABLE settings ADD COLUMN ${columnName} ${columnDefinition}`);
     }
   }
 }
@@ -137,6 +151,11 @@ export class SettingsRepository {
     if (input.packetEndPattern !== undefined) {
       updates.push('packetEndPattern = ?');
       values.push(input.packetEndPattern);
+    }
+
+    if (input.packetIdPattern !== undefined) {
+      updates.push('packetIdPattern = ?');
+      values.push(input.packetIdPattern);
     }
 
     updates.push('updatedAt = CURRENT_TIMESTAMP');

@@ -14,6 +14,7 @@ export interface LogEntry {
   isPacketStart?: boolean;
   isPacketEnd?: boolean;
   packetDurationMs?: number;
+  extractMode?: string;
 }
 
 export type LogLevel = 'INFO' | 'WARNING' | 'WARN' | 'ERROR' | 'DEBUG' | 'CRITICAL' | 'FATAL';
@@ -27,4 +28,5 @@ export interface PacketTrackingOptions {
   enablePackets?: boolean;
   packetStartPattern?: string;
   packetEndPattern?: string;
+  packetIdPattern?: string;
 }

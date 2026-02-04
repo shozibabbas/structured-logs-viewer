@@ -19,6 +19,7 @@ export interface PacketDurationSummary {
   endTimestamp: string;
   durationMs: number;
   fileName?: string;
+  tags?: string[];
 }
 
 export interface PacketSummaryStats {

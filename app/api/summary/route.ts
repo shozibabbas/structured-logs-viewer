@@ -6,12 +6,12 @@
 import { NextResponse } from 'next/server';
 import type { SummaryApiResponse, SummaryApiError } from '@/types/api.types';
 import { getLogFileRepository } from '@/data/repositories/logFile.repository';
-import { getSettingsRepository } from '@/data/repositories/settings.repository';
 import { parseLogFiles } from '@/services/logParser.service';
-import { normalizeSettings } from '@/services/settings.service';
 import { buildLogSummary } from '@/services/logSummary.service';
 import { getPacketColorMap } from '@/services/packetColor.service';
 import { extractPacketIds } from '@/services/logParser.service';
+import { getSettingsRepository } from '@/data/repositories/settings.repository';
+import { normalizeSettings } from '@/services/settings.service';
 
 export async function GET() {
   try {
@@ -41,6 +41,7 @@ export async function GET() {
       enablePackets: settings.enablePackets,
       packetStartPattern: settings.packetStartPattern,
       packetEndPattern: settings.packetEndPattern,
+      packetIdPattern: settings.packetIdPattern,
     });
 
     const summary = buildLogSummary(logs);

@@ -12,13 +12,6 @@ import type {
   TimeRangeSummary,
 } from '@/types/summary.types';
 
-interface PacketStartState {
-  packetId: string;
-  startTimestamp: string;
-  startTime: Date;
-  fileName: string;
-}
-
 /**
  * Aggregates log entries into summary metrics
  */
@@ -26,8 +19,9 @@ export function buildLogSummary(entries: LogEntry[]): LogSummary {
   const levelCounts = new Map<string, number>();
   const fileCounts = new Map<string, number>();
   const packetIds = new Set<string>();
-  const packetDurations: PacketDurationSummary[] = [];
-  const packetStartByFile = new Map<string, PacketStartState | null>();
+  const packetTagsById = new Map<string, Set<string>>();
+  const packetStartByJobId = new Map<string, { timestamp: string; time: Date; fileName: string }>();
+  const packetEndByJobId = new Map<string, { timestamp: string; time: Date; fileName: string }>();
 
   let earliest: Date | null = null;
   let latest: Date | null = null;
@@ -46,30 +40,49 @@ export function buildLogSummary(entries: LogEntry[]): LogSummary {
 
     if (entry.packetId) {
       packetIds.add(entry.packetId);
-    }
 
-    if (entry.isPacketStart && entry.packetId) {
-      packetStartByFile.set(entry.fileName, {
-        packetId: entry.packetId,
-        startTimestamp: entry.timestamp,
-        startTime: entryTime,
+      // Track first occurrence of packetId
+      if (!packetStartByJobId.has(entry.packetId)) {
+        packetStartByJobId.set(entry.packetId, {
+          timestamp: entry.timestamp,
+          time: entryTime,
+          fileName: entry.fileName,
+        });
+      }
+
+      // Track last occurrence of packetId
+      packetEndByJobId.set(entry.packetId, {
+        timestamp: entry.timestamp,
+        time: entryTime,
         fileName: entry.fileName,
       });
-    }
 
-    if (entry.isPacketEnd && entry.packetId) {
-      const currentStart = packetStartByFile.get(entry.fileName) ?? null;
-      if (currentStart && currentStart.packetId === entry.packetId) {
-        const durationMs = Math.max(0, entryTime.getTime() - currentStart.startTime.getTime());
-        packetDurations.push({
-          packetId: entry.packetId,
-          startTimestamp: currentStart.startTimestamp,
-          endTimestamp: entry.timestamp,
-          durationMs,
-          fileName: currentStart.fileName,
-        });
-        packetStartByFile.set(entry.fileName, null);
+      // Collect extract mode tags
+      if (entry.extractMode) {
+        if (!packetTagsById.has(entry.packetId)) {
+          packetTagsById.set(entry.packetId, new Set<string>());
+        }
+        packetTagsById.get(entry.packetId)!.add(entry.extractMode);
       }
+    }
+  }
+
+  // Build packet durations from first to last occurrence
+  const packetDurations: PacketDurationSummary[] = [];
+  for (const packetId of packetIds) {
+    const start = packetStartByJobId.get(packetId);
+    const end = packetEndByJobId.get(packetId);
+
+    if (start && end) {
+      const durationMs = Math.max(0, end.time.getTime() - start.time.getTime());
+      packetDurations.push({
+        packetId,
+        startTimestamp: start.timestamp,
+        endTimestamp: end.timestamp,
+        durationMs,
+        fileName: start.fileName,
+        tags: Array.from(packetTagsById.get(packetId) ?? []).sort(),
+      });
     }
   }
 

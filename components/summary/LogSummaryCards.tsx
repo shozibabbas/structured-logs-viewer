@@ -16,7 +16,7 @@ export function LogSummaryCards({ summary }: LogSummaryCardsProps) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <SummaryCard label="Total Logs" value={summary.totalEntries.toLocaleString()} />
+      <SummaryCard label="Packets" value={summary.totalEntries.toLocaleString()} />
       <SummaryCard label="Files" value={summary.totalFiles.toLocaleString()} />
       <SummaryCard
         label="Time Range"

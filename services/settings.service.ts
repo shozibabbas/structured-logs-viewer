@@ -48,6 +48,18 @@ export function validateSettings(input: UpdateSettingsInput): {
     }
   }
 
+  if (input.packetIdPattern !== undefined) {
+    if (!input.packetIdPattern.trim()) {
+      errors.push('Packet ID pattern cannot be empty');
+    } else {
+      try {
+        new RegExp(input.packetIdPattern);
+      } catch {
+        errors.push('Invalid regex pattern for packet ID');
+      }
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -62,5 +74,6 @@ export function createDefaultSettings(): Omit<LogSettings, 'id' | 'createdAt' | 
     enablePackets: true,
     packetStartPattern: 'Received message on',
     packetEndPattern: 'Processed OK',
+    packetIdPattern: 'job_id=([a-zA-Z0-9_-]+)',
   };
 }
